@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Benchmark 模型对比</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#0f172a; color:#e2e8f0; padding:20px; }
+  .container { max-width:900px; margin:0 auto; }
+  h1 { text-align:center; margin-bottom:8px; font-size:24px; }
+  .subtitle { text-align:center; color:#94a3b8; margin-bottom:30px; font-size:14px; }
+  .model-row { display:flex; align-items:center; padding:10px 0; border-bottom:1px solid #1e293b; cursor:pointer; transition:background .15s; }
+  .model-row:hover { background:#1e293b; }
+  .model-name { width:220px; font-size:13px; font-weight:500; padding-right:12px; flex-shrink:0; }
+  .bar-wrap { flex:1; height:28px; background:#1e293b; border-radius:4px; position:relative; overflow:hidden; }
+  .bar-fill { height:100%; background:linear-gradient(90deg, #3b82f6, #60a5fa); border-radius:4px; display:flex; align-items:center; justify-content:flex-end; padding-right:8px; transition:width .6s ease; }
+  .bar-value { font-size:12px; font-weight:600; color:#fff; }
+  .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.7); z-index:100; align-items:center; justify-content:center; }
+  .modal-overlay.active { display:flex; }
+  .modal { background:#1e293b; border-radius:12px; width:90%; max-width:500px; max-height:80vh; overflow-y:auto; padding:24px; }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .modal-title { font-size:18px; font-weight:600; }
+  .modal-close { background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer; }
+  .modal-close:hover { color:#fff; }
+  .detail-row { display:flex; align-items:center; padding:8px 0; border-bottom:1px solid #334155; }
+  .detail-label { width:180px; font-size:13px; color:#94a3b8; flex-shrink:0; }
+  .detail-bar-wrap { flex:1; height:20px; background:#0f172a; border-radius:3px; position:relative; overflow:hidden; }
+  .detail-bar-fill { height:100%; border-radius:3px; display:flex; align-items:center; justify-content:flex-end; padding-right:6px; }
+  .detail-value { font-size:11px; font-weight:600; color:#fff; }
+  .detail-desc { font-size:10px; color:#64748b; margin-top:2px; line-height:1.2; }
+  .rank { color:#64748b; font-size:11px; margin-right:6px; width:24px; text-align:right; flex-shrink:0; }
+  @media(max-width:600px){ .model-name{width:140px;font-size:12px;} .rank{width:20px;} }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🤖 LLM 模型 Benchmark 对比</h1>
+  <div class="subtitle">按 Artificial Analysis Intelligence Index 排序 · 点击模型查看详情</div>
+  <div id="chart"></div>
+</div>
+
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title"></div>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const models = [{"name": "GPT-5.5 (xhigh)", "index": 60, "scores": {"artificial_analysis_intelligence_index": 60, "gpqa_diamond": 94, "humanitys_last_exam": 44, "scicode": 56, "terminal_bench_hard": 61, "gdpval_aa": 64, "mmmu_pro": 80, "tau2_bench_telecom": 94, "aa_lcr": 74, "ifbench": 76, "aa_omniscience": 57, "aa_omniscience_non_hallucination": 13, "critpt": 27}}, {"name": "Gemini 3.1 Pro Preview", "index": 57, "scores": {"artificial_analysis_intelligence_index": 57, "gpqa_diamond": 94, "humanitys_last_exam": 45, "scicode": 59, "terminal_bench_hard": 54, "gdpval_aa": 41, "mmmu_pro": 82, "tau2_bench_telecom": 96, "aa_lcr": 73, "ifbench": 78, "aa_omniscience": 55, "aa_omniscience_non_hallucination": 50, "critpt": 18}}, {"name": "GPT-5.4 (xhigh)", "index": 57, "scores": {"artificial_analysis_intelligence_index": 57, "gpqa_diamond": 92, "humanitys_last_exam": 42, "scicode": 57, "terminal_bench_hard": 58, "gdpval_aa": 59, "mmmu_pro": 78, "tau2_bench_telecom": 89, "aa_lcr": 74, "ifbench": 74, "aa_omniscience": 50, "aa_omniscience_non_hallucination": 11, "critpt": 23}}, {"name": "Claude Opus 4.7 (max)", "index": 57, "scores": {"artificial_analysis_intelligence_index": 57, "gpqa_diamond": 91, "humanitys_last_exam": 40, "scicode": 55, "terminal_bench_hard": 52, "gdpval_aa": 63, "mmmu_pro": null, "tau2_bench_telecom": 91, "aa_lcr": null, "ifbench": 61, "aa_omniscience": 46, "aa_omniscience_non_hallucination": 64, "critpt": 12}}, {"name": "GPT-5.3 Codex (xhigh)", "index": 54, "scores": {"artificial_analysis_intelligence_index": 54, "gpqa_diamond": 92, "humanitys_last_exam": 40, "scicode": 53, "terminal_bench_hard": 53, "gdpval_aa": 49, "mmmu_pro": 79, "tau2_bench_telecom": 86, "aa_lcr": 74, "ifbench": 75, "aa_omniscience": 52, "aa_omniscience_non_hallucination": 13, "critpt": 17}}, {"name": "Kimi K2.6", "index": 54, "scores": {"artificial_analysis_intelligence_index": 54, "gpqa_diamond": 91, "humanitys_last_exam": 36, "scicode": 54, "terminal_bench_hard": 44, "gdpval_aa": 49, "mmmu_pro": 79, "tau2_bench_telecom": 96, "aa_lcr": 70, "ifbench": 76, "aa_omniscience": 33, "aa_omniscience_non_hallucination": 61, "critpt": 8}}, {"name": "MiMo-V2.5-Pro", "index": 54, "scores": {"artificial_analysis_intelligence_index": 54, "gpqa_diamond": 87, "humanitys_last_exam": 34, "scicode": 50, "terminal_bench_hard": 43, "gdpval_aa": 54, "mmmu_pro": null, "tau2_bench_telecom": 94, "aa_lcr": 73, "ifbench": 80, "aa_omniscience": 23, "aa_omniscience_non_hallucination": 75, "critpt": 4}}, {"name": "Claude Opus 4.6 (high)", "index": 52, "scores": {"artificial_analysis_intelligence_index": 52, "gpqa_diamond": 84, "humanitys_last_exam": 19, "scicode": 52, "terminal_bench_hard": 49, "gdpval_aa": 55, "mmmu_pro": 73, "tau2_bench_telecom": 85, "aa_lcr": 70, "ifbench": 54, "aa_omniscience": 45, "aa_omniscience_non_hallucination": 37, "critpt": 12}}, {"name": "DeepSeek V4 Pro", "index": 52, "scores": {"artificial_analysis_intelligence_index": 52, "gpqa_diamond": 89, "humanitys_last_exam": 36, "scicode": 50, "terminal_bench_hard": 46, "gdpval_aa": null, "mmmu_pro": null, "tau2_bench_telecom": 96, "aa_lcr": 66, "ifbench": 77, "aa_omniscience": 43, "aa_omniscience_non_hallucination": 6, "critpt": 13}}, {"name": "Claude Sonnet 4.6 (max)", "index": 52, "scores": {"artificial_analysis_intelligence_index": 52, "gpqa_diamond": 88, "humanitys_last_exam": 30, "scicode": 47, "terminal_bench_hard": 53, "gdpval_aa": 59, "mmmu_pro": 73, "tau2_bench_telecom": 85, "aa_lcr": 71, "ifbench": 57, "aa_omniscience": 40, "aa_omniscience_non_hallucination": 54, "critpt": 4}}, {"name": "DeepSeek V4 Flash", "index": 52, "scores": {"artificial_analysis_intelligence_index": 52, "gpqa_diamond": 89, "humanitys_last_exam": 32, "scicode": 45, "terminal_bench_hard": 36, "gdpval_aa": 44, "mmmu_pro": null, "tau2_bench_telecom": 95, "aa_lcr": 64, "ifbench": 79, "aa_omniscience": 37, "aa_omniscience_non_hallucination": 4, "critpt": 7}}, {"name": "Qwen3.6 Plus", "index": 52, "scores": {"artificial_analysis_intelligence_index": 52, "gpqa_diamond": 88, "humanitys_last_exam": 26, "scicode": 41, "terminal_bench_hard": 44, "gdpval_aa": 43, "mmmu_pro": 78, "tau2_bench_telecom": 98, "aa_lcr": 70, "ifbench": 75, "aa_omniscience": 26, "aa_omniscience_non_hallucination": 68, "critpt": 3}}, {"name": "GPT-5.2 (xhigh)", "index": 51, "scores": {"artificial_analysis_intelligence_index": 51, "gpqa_diamond": 90, "humanitys_last_exam": 35, "scicode": 53, "terminal_bench_hard": 47, "gdpval_aa": 49, "mmmu_pro": null, "tau2_bench_telecom": 85, "aa_lcr": 73, "ifbench": 75, "aa_omniscience": 44, "aa_omniscience_non_hallucination": 20, "critpt": 10}}, {"name": "GLM-5.1", "index": 51, "scores": {"artificial_analysis_intelligence_index": 51, "gpqa_diamond": 87, "humanitys_last_exam": 28, "scicode": 44, "terminal_bench_hard": 43, "gdpval_aa": 52, "mmmu_pro": null, "tau2_bench_telecom": 98, "aa_lcr": 63, "ifbench": 76, "aa_omniscience": 26, "aa_omniscience_non_hallucination": 71, "critpt": 5}}, {"name": "Qwen3.6 Max Preview", "index": 50, "scores": {"artificial_analysis_intelligence_index": 50, "gpqa_diamond": 89, "humanitys_last_exam": 29, "scicode": 49, "terminal_bench_hard": 44, "gdpval_aa": 50, "mmmu_pro": null, "tau2_bench_telecom": 96, "aa_lcr": 70, "ifbench": 77, "aa_omniscience": 38, "aa_omniscience_non_hallucination": 56, "critpt": 4}}, {"name": "GPT-5.4 mini (xhigh)", "index": 50, "scores": {"artificial_analysis_intelligence_index": 50, "gpqa_diamond": 88, "humanitys_last_exam": 27, "scicode": null, "terminal_bench_hard": 52, "gdpval_aa": 47, "mmmu_pro": 73, "tau2_bench_telecom": null, "aa_lcr": 69, "ifbench": 73, "aa_omniscience": 37, "aa_omniscience_non_hallucination": 10, "critpt": 10}}, {"name": "MiniMax-M2.7", "index": 50, "scores": {"artificial_analysis_intelligence_index": 50, "gpqa_diamond": 87, "humanitys_last_exam": 28, "scicode": 47, "terminal_bench_hard": 39, "gdpval_aa": 51, "mmmu_pro": null, "tau2_bench_telecom": 86, "aa_lcr": 69, "ifbench": 76, "aa_omniscience": 26, "aa_omniscience_non_hallucination": 66, "critpt": 1}}, {"name": "Gemini 3 Pro Preview (high)", "index": 49, "scores": {"artificial_analysis_intelligence_index": 49, "gpqa_diamond": 91, "humanitys_last_exam": 37, "scicode": 56, "terminal_bench_hard": 42, "gdpval_aa": 34, "mmmu_pro": 80, "tau2_bench_telecom": 87, "aa_lcr": 71, "ifbench": 77, "aa_omniscience": 56, "aa_omniscience_non_hallucination": 8, "critpt": 9}}, {"name": "Kimi K2.5", "index": 48, "scores": {"artificial_analysis_intelligence_index": 48, "gpqa_diamond": 88, "humanitys_last_exam": 29, "scicode": 50, "terminal_bench_hard": 35, "gdpval_aa": 39, "mmmu_pro": 75, "tau2_bench_telecom": 96, "aa_lcr": 65, "ifbench": 71, "aa_omniscience": 34, "aa_omniscience_non_hallucination": 34, "critpt": 3}}, {"name": "Gemini 3 Flash", "index": 47, "scores": {"artificial_analysis_intelligence_index": 47, "gpqa_diamond": 90, "humanitys_last_exam": 35, "scicode": 51, "terminal_bench_hard": 39, "gdpval_aa": 35, "mmmu_pro": 80, "tau2_bench_telecom": 80, "aa_lcr": 66, "ifbench": 75, "aa_omniscience": 54, "aa_omniscience_non_hallucination": 8, "critpt": 9}}, {"name": "Claude Opus 4.6 (max)", "index": 47, "scores": {"artificial_analysis_intelligence_index": 47, "gpqa_diamond": 90, "humanitys_last_exam": 37, "scicode": 52, "terminal_bench_hard": 46, "gdpval_aa": 56, "mmmu_pro": 75, "tau2_bench_telecom": 92, "aa_lcr": 71, "ifbench": 59, "aa_omniscience": 46, "aa_omniscience_non_hallucination": 39, "critpt": 13}}, {"name": "DeepSeek V4", "index": 47, "scores": {"artificial_analysis_intelligence_index": 47, "gpqa_diamond": null, "humanitys_last_exam": null, "scicode": null, "terminal_bench_hard": null, "gdpval_aa": null, "mmmu_pro": null, "tau2_bench_telecom": null, "aa_lcr": null, "ifbench": null, "aa_omniscience": null, "aa_omniscience_non_hallucination": null, "critpt": null}}, {"name": "Claude Sonnet 4.6 (high)", "index": 46, "scores": {"artificial_analysis_intelligence_index": 46, "gpqa_diamond": null, "humanitys_last_exam": null, "scicode": null, "terminal_bench_hard": null, "gdpval_aa": null, "mmmu_pro": null, "tau2_bench_telecom": null, "aa_lcr": null, "ifbench": null, "aa_omniscience": null, "aa_omniscience_non_hallucination": null, "critpt": null}}, {"name": "Claude Opus 4.5", "index": 44, "scores": {"artificial_analysis_intelligence_index": 44, "gpqa_diamond": 84, "humanitys_last_exam": 13, "scicode": 47, "terminal_bench_hard": 41, "gdpval_aa": 46, "mmmu_pro": 73, "tau2_bench_telecom": 87, "aa_lcr": 70, "ifbench": null, "aa_omniscience": 41, "aa_omniscience_non_hallucination": 25, "critpt": 0}}, {"name": "Claude Sonnet 4.6 (Non-reasoning)", "index": 44, "scores": {"artificial_analysis_intelligence_index": 44, "gpqa_diamond": 81, "humanitys_last_exam": 13, "scicode": 47, "terminal_bench_hard": 46, "gdpval_aa": 55, "mmmu_pro": 71, "tau2_bench_telecom": 84, "aa_lcr": 70, "ifbench": 43, "aa_omniscience": 38, "aa_omniscience_non_hallucination": null, "critpt": 1}}, {"name": "GLM-4.7", "index": 44, "scores": {"artificial_analysis_intelligence_index": 44, "gpqa_diamond": null, "humanitys_last_exam": 25, "scicode": 45, "terminal_bench_hard": 35, "gdpval_aa": 35, "mmmu_pro": null, "tau2_bench_telecom": 96, "aa_lcr": 65, "ifbench": 46, "aa_omniscience": 29, "aa_omniscience_non_hallucination": 14, "critpt": 3}}, {"name": "Claude Sonnet 4.6 (Non-reasoning, Low Effort)", "index": 43, "scores": {"artificial_analysis_intelligence_index": 43, "gpqa_diamond": 80, "humanitys_last_exam": 11, "scicode": 45, "terminal_bench_hard": 42, "gdpval_aa": 48, "mmmu_pro": 71, "tau2_bench_telecom": 83, "aa_lcr": 66, "ifbench": 42, "aa_omniscience": 36, "aa_omniscience_non_hallucination": null, "critpt": 1}}, {"name": "DeepSeek V3.2", "index": 43, "scores": {"artificial_analysis_intelligence_index": 43, "gpqa_diamond": 86, "humanitys_last_exam": 22, "scicode": 39, "terminal_bench_hard": 36, "gdpval_aa": 35, "mmmu_pro": null, "tau2_bench_telecom": 92, "aa_lcr": 65, "ifbench": 70, "aa_omniscience": 33, "aa_omniscience_non_hallucination": 18, "critpt": 3}}, {"name": "MiniMax-M2.5", "index": 43, "scores": {"artificial_analysis_intelligence_index": 43, "gpqa_diamond": 85, "humanitys_last_exam": 19, "scicode": 43, "terminal_bench_hard": 36, "gdpval_aa": 34, "mmmu_pro": null, "tau2_bench_telecom": 95, "aa_lcr": 66, "ifbench": 73, "aa_omniscience": 26, "aa_omniscience_non_hallucination": 11, "critpt": 1}}, {"name": "Qwen3 Max Thinking", "index": 42, "scores": {"artificial_analysis_intelligence_index": 42, "gpqa_diamond": 87, "humanitys_last_exam": 26, "scicode": 43, "terminal_bench_hard": 27, "gdpval_aa": 32, "mmmu_pro": null, "tau2_bench_telecom": 85, "aa_lcr": 66, "ifbench": 72, "aa_omniscience": 30, "aa_omniscience_non_hallucination": 8, "critpt": 2}}, {"name": "Doubao Seed Code", "index": 42, "scores": {"artificial_analysis_intelligence_index": 42, "gpqa_diamond": 80, "humanitys_last_exam": 13, "scicode": 41, "terminal_bench_hard": 32, "gdpval_aa": 24, "mmmu_pro": 69, "tau2_bench_telecom": 60, "aa_lcr": 65, "ifbench": 51, "aa_omniscience": 25, "aa_omniscience_non_hallucination": 21, "critpt": 0}}, {"name": "Gemma 4 31B", "index": 42, "scores": {"artificial_analysis_intelligence_index": 42, "gpqa_diamond": 86, "humanitys_last_exam": 23, "scicode": 44, "terminal_bench_hard": 36, "gdpval_aa": 31, "mmmu_pro": 73, "tau2_bench_telecom": 76, "aa_lcr": 62, "ifbench": 76, "aa_omniscience": 20, "aa_omniscience_non_hallucination": 18, "critpt": 2}}, {"name": "Claude 4.5 Haiku", "index": 40, "scores": {"artificial_analysis_intelligence_index": 40, "gpqa_diamond": 76, "humanitys_last_exam": 10, "scicode": null, "terminal_bench_hard": 27, "gdpval_aa": 34, "mmmu_pro": 68, "tau2_bench_telecom": 80, "aa_lcr": null, "ifbench": 53, "aa_omniscience": 17, "aa_omniscience_non_hallucination": 74, "critpt": 0}}, {"name": "DeepSeek R1 0528", "index": 34, "scores": {"artificial_analysis_intelligence_index": 34, "gpqa_diamond": 81, "humanitys_last_exam": 15, "scicode": 40, "terminal_bench_hard": 16, "gdpval_aa": 9, "mmmu_pro": null, "tau2_bench_telecom": 55, "aa_lcr": 55, "ifbench": 68, "aa_omniscience": 31, "aa_omniscience_non_hallucination": 16, "critpt": 1}}, {"name": "GLM-4.7-Flash", "index": 27, "scores": {"artificial_analysis_intelligence_index": 27, "gpqa_diamond": 45, "humanitys_last_exam": 5, "scicode": 26, "terminal_bench_hard": 4, "gdpval_aa": 15, "mmmu_pro": null, "tau2_bench_telecom": 92, "aa_lcr": 15, "ifbench": 40, "aa_omniscience": 12, "aa_omniscience_non_hallucination": 16, "critpt": 0}}];
+const benchmarkLabels = {"artificial_analysis_intelligence_index": "Intelligence Index", "aa_omniscience": "AA-Omniscience", "humanitys_last_exam": "Humanity's Last Exam", "gdpval_aa": "GDPval-AA", "terminal_bench_hard": "Terminal-Bench Hard", "tau2_bench_telecom": "τ²-Bench Telecom", "aa_lcr": "AA-LCR", "mmmu_pro": "MMMU-Pro", "scicode": "SciCode", "gpqa_diamond": "GPQA Diamond", "aa_omniscience_non_hallucination": "AA-Omniscience (Non-Hallucination)", "ifbench": "IFBench", "critpt": "CritPt"};
+const benchmarkDesc = {"artificial_analysis_intelligence_index": "综合智能指数，多维度加权评分", "aa_omniscience": "世界知识与常识问答准确率", "humanitys_last_exam": "前沿学术与跨学科难题解答", "gdpval_aa": "多语言对话质量与帮助性评分", "terminal_bench_hard": "复杂终端/命令行任务执行", "tau2_bench_telecom": "电信领域专业推理与规划", "aa_lcr": "长上下文理解与信息检索", "mmmu_pro": "多模态理解与视觉推理", "scicode": "科学计算与代码生成", "gpqa_diamond": "研究生级别科学问题解答", "aa_omniscience_non_hallucination": "事实性问答中的无幻觉率", "ifbench": "指令遵循与格式约束能力", "critpt": "数学与物理中的临界点分析"};
+const detailOrder = ["artificial_analysis_intelligence_index", "gpqa_diamond", "humanitys_last_exam", "scicode", "terminal_bench_hard", "gdpval_aa", "mmmu_pro", "tau2_bench_telecom", "aa_lcr", "ifbench", "aa_omniscience", "aa_omniscience_non_hallucination", "critpt"];
+const colors = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1", "#14b8a6", "#a855f7", "#ef4444"];
+
+const maxIndex = Math.max(...models.map(m => m.index));
+const chart = document.getElementById('chart');
+
+models.forEach((m, i) => {
+  const row = document.createElement('div');
+  row.className = 'model-row';
+  row.onclick = () => openModal(i);
+  const pct = (m.index / maxIndex * 100).toFixed(1);
+  row.innerHTML = `
+    <div class="rank">#${i+1}</div>
+    <div class="model-name">${m.name}</div>
+    <div class="bar-wrap">
+      <div class="bar-fill" style="width:0%" data-width="${pct}%">
+        <span class="bar-value">${m.index}</span>
+      </div>
+    </div>
+  `;
+  chart.appendChild(row);
+  setTimeout(() => { row.querySelector('.bar-fill').style.width = pct + '%'; }, 50 + i * 30);
+});
+
+function openModal(idx) {
+  const m = models[idx];
+  document.getElementById('modal-title').textContent = m.name + ' 详细得分';
+  const body = document.getElementById('modal-body');
+  body.innerHTML = '';
+  detailOrder.forEach((bench, bi) => {
+    const score = m.scores[bench];
+    if (score === null) return;
+    const maxVal = bench === 'artificial_analysis_intelligence_index' ? 70 : 100;
+    const pct = Math.min((score / maxVal * 100), 100).toFixed(1);
+    const row = document.createElement('div');
+    row.className = 'detail-row';
+    row.innerHTML = `
+      <div class="detail-label">
+        <div>${benchmarkLabels[bench]}</div>
+        <div class="detail-desc">${benchmarkDesc[bench]}</div>
+      </div>
+      <div class="detail-bar-wrap">
+        <div class="detail-bar-fill" style="width:0%; background:${colors[bi % colors.length]}" data-width="${pct}%">
+          <span class="detail-value">${score}${bench === 'artificial_analysis_intelligence_index' ? '' : '%'}</span>
+        </div>
+      </div>
+    `;
+    body.appendChild(row);
+    setTimeout(() => { row.querySelector('.detail-bar-fill').style.width = pct + '%'; }, 50);
+  });
+  document.getElementById('modal').classList.add('active');
+}
+
+function closeModal(e) {
+  if (!e || e.target.id === 'modal') {
+    document.getElementById('modal').classList.remove('active');
+  }
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+</script>
+</body>
+</html>

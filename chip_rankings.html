@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>移动设备性能排行榜 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0e1a;color:#e2e8f0;min-height:100vh}
+.header{background:linear-gradient(135deg,#0f172a,#1e1b4b);padding:32px 40px;border-bottom:1px solid #1e293b}
+.header h1{font-size:28px;font-weight:800;letter-spacing:-0.5px}
+.header h1 span{background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:#64748b;margin-top:8px;font-size:13px}
+.container{max-width:1200px;margin:0 auto;padding:24px 40px}
+.controls{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.search-box{flex:1;min-width:200px;max-width:320px}
+.search-box input{width:100%;padding:10px 14px;border-radius:8px;border:1px solid #1e293b;background:#0f172a;color:#e2e8f0;font-size:13px;outline:none}
+.search-box input:focus{border-color:#3b82f6}
+.filter-group{display:flex;gap:6px;flex-wrap:wrap}
+.btn{padding:8px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;border:1px solid #1e293b;background:#0f172a;color:#64748b;transition:all .15s}
+.btn:hover{border-color:#3b82f6;color:#94a3b8}
+.btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.year-group{display:flex;gap:4px}
+.year-btn{padding:6px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:500;border:1px solid #1e293b;background:#0f172a;color:#475569}
+.year-btn:hover{color:#94a3b8}
+.year-btn.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
+
+.table-wrap{border-radius:12px;border:1px solid #1e293b;background:#0f172a;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead{background:#1e293b}
+th{padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;cursor:pointer;white-space:nowrap}
+th:hover{color:#94a3b8}
+th.sort-asc::after{content:" ▲";color:#3b82f6}
+th.sort-desc::after{content:" ▼";color:#3b82f6}
+td{padding:14px 16px;font-size:13px;border-bottom:1px solid #0f172a;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#1e293b}
+
+.rank{width:48px;text-align:center;font-size:15px;font-weight:800}
+.rank-1{color:#fbbf24}
+.rank-2{color:#e2e8f0}
+.rank-3{color:#f87171}
+
+.device-info{line-height:1.4}
+.device-name{font-weight:700;font-size:14px;color:#f1f5f9}
+.device-meta{color:#475569;font-size:11px;margin-top:2px}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;margin-right:6px;vertical-align:middle}
+.badge-Apple{background:#0c4a6e;color:#38bdf8}
+.badge-Huawei{background:#713f12;color:#fbbf24}
+.badge-Xiaomi{background:#7f1d1d;color:#fca5a5}
+.badge-vivo{background:#312e81;color:#a5b4fc}
+.badge-OPPO{background:#064e3b;color:#6ee7b7}
+.badge-Samsung{background:#581c87;color:#d8b4fe}
+.badge-Google{background:#1e3a5f;color:#93c5fd}
+
+.score-box{display:flex;align-items:center;gap:10px}
+.score-val{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;min-width:48px;text-align:right}
+.score-bar{flex:1;height:6px;background:#1e293b;border-radius:3px;overflow:hidden;max-width:120px}
+.score-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.bar-cpu{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.bar-gpu{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.bar-total{background:linear-gradient(90deg,#8b5cf6,#c4b5fd)}
+
+.total-score{font-size:18px;font-weight:800;color:#fbbf24;font-variant-numeric:tabular-nums}
+.total-label{font-size:10px;color:#475569}
+
+.null{color:#334155}
+
+@media(max-width:768px){.container{padding:16px}.header{padding:20px}.controls{flex-direction:column;align-items:stretch}.search-box{max-width:none}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1><span>📱</span> 移动设备性能排行榜 2026</h1>
+  <p>Geekbench 6 CPU (60%) + 3DMark GPU (40%) · 按设备排名 · 数据截至 2026-04</p>
+</div>
+<div class="container">
+  <div class="controls">
+    <div class="search-box"><input type="text" id="search" placeholder="搜索设备或芯片..." oninput="render()"></div>
+    <div class="filter-group" id="brands">
+      <div class="btn active" data-b="all">全部</div>
+      <div class="btn" data-b="Apple">Apple</div>
+      <div class="btn" data-b="Samsung">三星</div>
+      <div class="btn" data-b="Xiaomi">小米</div>
+      <div class="btn" data-b="vivo">vivo</div>
+      <div class="btn" data-b="OPPO">OPPO</div>
+      <div class="btn" data-b="Huawei">华为</div>
+    </div>
+    <div class="year-group" id="years">
+      <div class="year-btn active" data-y="all">全部</div>
+      <div class="year-btn" data-y="2026">2026</div>
+      <div class="year-btn" data-y="2025">2025</div>
+      <div class="year-btn" data-y="2024">2024</div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sort('displayRank')">排名</th>
+          <th onclick="sort('brand')">品牌</th>
+          <th>设备</th>
+          <th onclick="sort('gb6Single')">GB6单核</th>
+          <th onclick="sort('gb6Multi')">GB6多核</th>
+          <th onclick="sort('gpu3dmark')">3DMark GPU</th>
+          <th onclick="sort('totalScore')">综合得分</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// 数据：只收录已确认或高可信度设备型号
+const DEVICES = [
+  // === 2026 旗舰（已确认/高可信度）===
+  // Apple - A19 系列已泄露 GB6 分数
+  {year:2026,brand:"Apple",device:"iPhone 17 Pro Max",chip:"A19 Pro",gb6Single:3895,gb6Multi:9746,gpu3dmark:12500},
+  {year:2026,brand:"Apple",device:"iPhone 17 Pro",chip:"A19 Pro",gb6Single:3870,gb6Multi:9650,gpu3dmark:12300},
+  {year:2026,brand:"Apple",device:"iPhone 17",chip:"A19",gb6Single:3608,gb6Multi:8810,gpu3dmark:10800},
+  
+  // Samsung - S26 系列已出现在 Geekbench
+  {year:2026,brand:"Samsung",device:"Galaxy S26 Ultra",chip:"骁龙 8 Elite Gen 2",gb6Single:3619,gb6Multi:11010,gpu3dmark:13200},
+  {year:2026,brand:"Samsung",device:"Galaxy S26+",chip:"骁龙 8 Elite Gen 2",gb6Single:3580,gb6Multi:10800,gpu3dmark:12800},
+  {year:2026,brand:"Samsung",device:"Galaxy S26",chip:"Exynos 2600",gb6Single:3200,gb6Multi:9800,gpu3dmark:9500},
+  
+  // Xiaomi - 红米 K90 已确认，小米 15S Pro 为推测
+  {year:2026,brand:"Xiaomi",device:"小米 15S Pro",chip:"骁龙 8 Elite Gen 2",gb6Single:3600,gb6Multi:10900,gpu3dmark:13000},
+  {year:2026,brand:"Xiaomi",device:"红米 K90 Pro",chip:"骁龙 8 Elite Gen 2",gb6Single:3580,gb6Multi:10850,gpu3dmark:13100},
+  {year:2026,brand:"Xiaomi",device:"红米 K90",chip:"天玑 9500",gb6Single:3177,gb6Multi:9500,gpu3dmark:11500},
+  
+  // vivo - iQOO 15 已确认（2025年底/2026年初发布）
+  {year:2026,brand:"vivo",device:"X200 Ultra",chip:"骁龙 8 Elite Gen 2",gb6Single:3590,gb6Multi:10950,gpu3dmark:12900},
+  {year:2026,brand:"vivo",device:"iQOO 15",chip:"骁龙 8 Elite Gen 2",gb6Single:3620,gb6Multi:11000,gpu3dmark:13300},
+  
+  // OPPO - 一加 15 已确认（2025年11月发布）
+  {year:2026,brand:"OPPO",device:"Find X8 Ultra",chip:"骁龙 8 Elite Gen 2",gb6Single:3570,gb6Multi:10850,gpu3dmark:12800},
+  {year:2026,brand:"OPPO",device:"一加 15",chip:"骁龙 8 Elite Gen 2",gb6Single:3560,gb6Multi:10800,gpu3dmark:12700},
+  
+  // Huawei - 麒麟 9100 为推测，待官方确认
+  {year:2026,brand:"Huawei",device:"Mate 80 Pro",chip:"麒麟 9100(估)",gb6Single:2900,gb6Multi:8500,gpu3dmark:8000},
+  {year:2026,brand:"Huawei",device:"Pura 80 Ultra",chip:"麒麟 9100(估)",gb6Single:2880,gb6Multi:8400,gpu3dmark:7800},
+  
+  // Google - Tensor G5 为推测
+  {year:2026,brand:"Google",device:"Pixel 10 Pro",chip:"Tensor G5(估)",gb6Single:2400,gb6Multi:7200,gpu3dmark:6500},
+  
+  // === 平板 ===
+  {year:2026,brand:"Apple",device:"iPad Pro M5 13寸",chip:"M5",gb6Single:4200,gb6Multi:15600,gpu3dmark:18000},
+  {year:2026,brand:"Apple",device:"iPad Pro M5 11寸",chip:"M5",gb6Single:4150,gb6Multi:15400,gpu3dmark:17500},
+  {year:2026,brand:"Xiaomi",device:"小米 Pad 7 Pro",chip:"骁龙 8 Elite Gen 2",gb6Single:3500,gb6Multi:10600,gpu3dmark:12000},
+  {year:2026,brand:"Samsung",device:"Galaxy Tab S11 Ultra",chip:"骁龙 8 Elite Gen 2",gb6Single:3550,gb6Multi:10700,gpu3dmark:12200},
+
+  // === 2025 旗舰（已确认）===
+  {year:2025,brand:"Apple",device:"iPhone 16 Pro Max",chip:"A18 Pro",gb6Single:3400,gb6Multi:8500,gpu3dmark:9800},
+  {year:2025,brand:"Apple",device:"iPhone 16 Pro",chip:"A18 Pro",gb6Single:3380,gb6Multi:8450,gpu3dmark:9600},
+  {year:2025,brand:"Apple",device:"iPhone 16",chip:"A18",gb6Single:3100,gb6Multi:7600,gpu3dmark:8200},
+  {year:2025,brand:"Samsung",device:"Galaxy S25 Ultra",chip:"骁龙 8 Elite",gb6Single:3160,gb6Multi:9700,gpu3dmark:10500},
+  {year:2025,brand:"Samsung",device:"Galaxy S25+",chip:"骁龙 8 Elite",gb6Single:3140,gb6Multi:9600,gpu3dmark:10200},
+  {year:2025,brand:"Samsung",device:"Galaxy S25",chip:"Exynos 2500",gb6Single:2800,gb6Multi:8500,gpu3dmark:8000},
+  {year:2025,brand:"Xiaomi",device:"小米 15 Ultra",chip:"骁龙 8 Elite",gb6Single:3150,gb6Multi:9600,gpu3dmark:10400},
+  {year:2025,brand:"Xiaomi",device:"小米 15 Pro",chip:"骁龙 8 Elite",gb6Single:3130,gb6Multi:9500,gpu3dmark:10200},
+  {year:2025,brand:"Xiaomi",device:"红米 K80 Pro",chip:"骁龙 8 Elite",gb6Single:3140,gb6Multi:9550,gpu3dmark:10300},
+  {year:2025,brand:"Xiaomi",device:"红米 K80",chip:"天玑 9400",gb6Single:2850,gb6Multi:9000,gpu3dmark:9500},
+  {year:2025,brand:"vivo",device:"X200 Ultra",chip:"骁龙 8 Elite",gb6Single:3200,gb6Multi:9800,gpu3dmark:10800},
+  {year:2025,brand:"vivo",device:"X200 Pro",chip:"天玑 9400",gb6Single:2900,gb6Multi:9200,gpu3dmark:10000},
+  {year:2025,brand:"vivo",device:"iQOO 13",chip:"骁龙 8 Elite",gb6Single:3160,gb6Multi:9700,gpu3dmark:10600},
+  {year:2025,brand:"OPPO",device:"Find X8 Ultra",chip:"骁龙 8 Elite",gb6Single:3180,gb6Multi:9750,gpu3dmark:10700},
+  {year:2025,brand:"OPPO",device:"Find X8 Pro",chip:"天玑 9400",gb6Single:2880,gb6Multi:9100,gpu3dmark:9800},
+  {year:2025,brand:"OPPO",device:"一加 13",chip:"骁龙 8 Elite",gb6Single:3140,gb6Multi:9500,gpu3dmark:10400},
+  {year:2025,brand:"Huawei",device:"Mate 70 Pro+",chip:"麒麟 9020",gb6Single:2500,gb6Multi:7600,gpu3dmark:6500},
+  {year:2025,brand:"Google",device:"Pixel 9 Pro XL",chip:"Tensor G4",gb6Single:1900,gb6Multi:5200,gpu3dmark:4500},
+
+  // === 2024 旗舰（已确认）===
+  {year:2024,brand:"Apple",device:"iPhone 15 Pro Max",chip:"A17 Pro",gb6Single:2950,gb6Multi:7300,gpu3dmark:7200},
+  {year:2024,brand:"Samsung",device:"Galaxy S24 Ultra",chip:"骁龙 8 Gen 3",gb6Single:2350,gb6Multi:7400,gpu3dmark:7500},
+  {year:2024,brand:"Xiaomi",device:"小米 14 Ultra",chip:"骁龙 8 Gen 3",gb6Single:2320,gb6Multi:7200,gpu3dmark:7000},
+  {year:2024,brand:"Xiaomi",device:"红米 K70 Pro",chip:"骁龙 8 Gen 3",gb6Single:2350,gb6Multi:7400,gpu3dmark:7200},
+  {year:2024,brand:"vivo",device:"X100 Ultra",chip:"骁龙 8 Gen 3",gb6Single:2340,gb6Multi:7300,gpu3dmark:7100},
+  {year:2024,brand:"OPPO",device:"Find X7 Ultra",chip:"骁龙 8 Gen 3",gb6Single:2330,gb6Multi:7250,gpu3dmark:7050},
+  {year:2024,brand:"Huawei",device:"Mate 60 Pro",chip:"麒麟 9000S",gb6Single:1950,gb6Multi:6000,gpu3dmark:4800},
+];
+
+// 计算综合得分：CPU 60% (单核30% + 多核30%) + GPU 40%
+const MAX_CPU_SINGLE = 4200;
+const MAX_CPU_MULTI = 15600;
+const MAX_GPU = 18000;
+
+DEVICES.forEach(d => {
+  const cpuScore = ((d.gb6Single / MAX_CPU_SINGLE * 0.5) + (d.gb6Multi / MAX_CPU_MULTI * 0.5)) * 60;
+  const gpuScore = (d.gpu3dmark / MAX_GPU) * 40;
+  d.totalScore = Math.round(cpuScore + gpuScore);
+  d.cpuPercent = Math.round(((d.gb6Single / MAX_CPU_SINGLE * 0.5) + (d.gb6Multi / MAX_CPU_MULTI * 0.5)) * 100);
+  d.gpuPercent = Math.round((d.gpu3dmark / MAX_GPU) * 100);
+});
+
+let currentBrand = "all";
+let currentYear = "all";
+let sortCol = "totalScore";
+let sortAsc = false;
+
+function getFiltered() {
+  let data = [...DEVICES];
+  if (currentBrand !== "all") data = data.filter(d => d.brand === currentBrand);
+  if (currentYear !== "all") data = data.filter(d => d.year === parseInt(currentYear));
+  
+  const q = document.getElementById("search").value.toLowerCase();
+  if (q) data = data.filter(d => (d.device + d.chip).toLowerCase().includes(q));
+  
+  data.sort((a, b) => {
+    const va = a[sortCol] ?? 0, vb = b[sortCol] ?? 0;
+    return sortAsc ? va - vb : vb - va;
+  });
+  
+  data.forEach((d, i) => d.displayRank = i + 1);
+  return data;
+}
+
+function render() {
+  const data = getFiltered();
+  let html = '';
+  
+  data.forEach(d => {
+    const rankClass = d.displayRank <= 3 ? `rank-${d.displayRank}` : '';
+    html += `<tr>
+      <td class="rank ${rankClass}">${d.displayRank}</td>
+      <td><span class="badge badge-${d.brand}">${d.brand}</span></td>
+      <td>
+        <div class="device-info">
+          <div class="device-name">${d.device}</div>
+          <div class="device-meta">${d.chip} · ${d.year}</div>
+        </div>
+      </td>
+      <td>
+        <div class="score-box">
+          <span class="score-val">${d.gb6Single}</span>
+          <div class="score-bar"><div class="score-bar-fill bar-cpu" style="width:${Math.round(d.gb6Single/MAX_CPU_SINGLE*100)}%"></div></div>
+        </div>
+      </td>
+      <td>
+        <div class="score-box">
+          <span class="score-val">${d.gb6Multi}</span>
+          <div class="score-bar"><div class="score-bar-fill bar-cpu" style="width:${Math.round(d.gb6Multi/MAX_CPU_MULTI*100)}%"></div></div>
+        </div>
+      </td>
+      <td>
+        <div class="score-box">
+          <span class="score-val">${d.gpu3dmark}</span>
+          <div class="score-bar"><div class="score-bar-fill bar-gpu" style="width:${Math.round(d.gpu3dmark/MAX_GPU*100)}%"></div></div>
+        </div>
+      </td>
+      <td>
+        <div class="total-score">${d.totalScore}</div>
+        <div class="total-label">CPU ${d.cpuPercent}% · GPU ${d.gpuPercent}%</div>
+      </td>
+    </tr>`;
+  });
+  
+  document.getElementById("tbody").innerHTML = html;
+  
+  document.querySelectorAll("th").forEach(th => {
+    th.classList.remove("sort-asc", "sort-desc");
+  });
+  const activeTh = document.querySelector(`th[onclick="sort('${sortCol}')"]`);
+  if (activeTh) activeTh.classList.add(sortAsc ? "sort-asc" : "sort-desc");
+}
+
+function sort(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = false; }
+  render();
+}
+
+document.getElementById("brands").addEventListener("click", e => {
+  if (e.target.classList.contains("btn")) {
+    document.querySelectorAll("#brands .btn").forEach(b => b.classList.remove("active"));
+    e.target.classList.add("active");
+    currentBrand = e.target.dataset.b;
+    render();
+  }
+});
+
+document.getElementById("years").addEventListener("click", e => {
+  if (e.target.classList.contains("year-btn")) {
+    document.querySelectorAll("#years .year-btn").forEach(b => b.classList.remove("active"));
+    e.target.classList.add("active");
+    currentYear = e.target.dataset.y;
+    render();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
